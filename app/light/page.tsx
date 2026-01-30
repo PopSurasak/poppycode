@@ -10,7 +10,7 @@ function HomePage() {
             <div className="flex justify-center">
                 <button type="button"
                     className="bg-green-500 p-5 rounded-2xl text-2xl hover:bg-red-600 cursor-pointer"
-                    onClick={() => setIsLightOn(!isLightOn)}>
+                   onClick={() => setIsLightOn(!isLightOn)} >
                     เปิด/ปิดไฟ
                 </button>
             </div>
