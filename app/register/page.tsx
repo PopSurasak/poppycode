@@ -1,28 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
+    name: '',
+    nickname: '',
   })
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    // Check for message from URL params
-    const params = new URLSearchParams(window.location.search)
-    const msg = params.get('message')
-    if (msg) {
-      setMessage(msg)
-    }
-  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -35,29 +28,39 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setMessage('')
 
     // Validation
-    if (!formData.email || !formData.password) {
-      setError('โปรดกรอกอีเมลและรหัสผ่าน')
+    if (!formData.email || !formData.password || !formData.confirmPassword) {
+      setError('โปรดกรอกอีเมล รหัสผ่าน และยืนยันรหัสผ่าน')
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('รหัสผ่านไม่ตรงกัน')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร')
       return
     }
 
     try {
       setLoading(true)
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post('/api/auth/register', {
         email: formData.email,
         password: formData.password,
+        name: formData.name || null,
+        nickname: formData.nickname || null,
       })
 
-      if (response.status === 200) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.user))
-        // Redirect to dashboard or home
-        router.push('/light')
+      if (response.status === 201) {
+        router.push('/?message=สมัครสมาชิกสำเร็จแล้ว โปรดเข้าสู่ระบบ')
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ')
+      setError(
+        err.response?.data?.error || 'เกิดข้อผิดพลาดในการสมัครสมาชิก'
+      )
     } finally {
       setLoading(false)
     }
@@ -74,29 +77,12 @@ export default function LoginPage() {
         <div className="card bg-white shadow-2xl">
           <div className="card-body">
             <h1 className="card-title text-3xl font-bold text-center mb-6">
-              <span className="bg-gradient-to-r from-red-600 to-black bg-clip-text text-transparent">
-                เข้าสู่ระบบ
+              <span
+                className="bg-gradient-to-r from-red-600 to-black bg-clip-text text-transparent"
+              >
+                สมัครสมาชิก
               </span>
             </h1>
-
-            {message && (
-              <div className="alert alert-success mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="stroke-current shrink-0 h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>{message}</span>
-              </div>
-            )}
 
             {error && (
               <div className="alert alert-error mb-4">
@@ -135,6 +121,34 @@ export default function LoginPage() {
 
               <div className="form-control">
                 <label className="label">
+                  <span className="label-text font-semibold">ชื่อจริง</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="กรอกชื่อจริง (ไม่บังคับ)"
+                  className="input input-bordered border-red-300 focus:border-red-600 focus:ring-red-600"
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">ชื่อเล่น</span>
+                </label>
+                <input
+                  type="text"
+                  name="nickname"
+                  value={formData.nickname}
+                  onChange={handleChange}
+                  placeholder="กรอกชื่อเล่น (ไม่บังคับ)"
+                  className="input input-bordered border-red-300 focus:border-red-600 focus:ring-red-600"
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
                   <span className="label-text font-semibold">รหัสผ่าน</span>
                 </label>
                 <input
@@ -148,6 +162,23 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">
+                    ยืนยันรหัสผ่าน
+                  </span>
+                </label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="ยืนยันรหัสผ่าน"
+                  className="input input-bordered border-red-300 focus:border-red-600 focus:ring-red-600"
+                  required
+                />
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -156,7 +187,7 @@ export default function LoginPage() {
                 {loading ? (
                   <span className="loading loading-spinner"></span>
                 ) : (
-                  'เข้าสู่ระบบ'
+                  'สมัครสมาชิก'
                 )}
               </button>
             </form>
@@ -164,12 +195,12 @@ export default function LoginPage() {
             <div className="divider my-4">หรือ</div>
 
             <p className="text-center text-gray-600">
-              ยังไม่มีบัญชี?{' '}
+              มีบัญชีแล้ว?{' '}
               <Link
-                href="/register"
+                href="/"
                 className="text-red-600 font-bold hover:text-red-700"
               >
-                สมัครสมาชิก
+                เข้าสู่ระบบ
               </Link>
             </p>
           </div>
